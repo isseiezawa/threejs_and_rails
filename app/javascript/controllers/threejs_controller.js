@@ -1,5 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 import * as THREE from "three"
+// wasdのような移動できる機能の追加
+import { OrbitControls } from "three/examples"
 
 // Connects to data-controller="threejs"
 export default class extends Controller {
@@ -41,20 +43,32 @@ export default class extends Controller {
 
     // 光源の位置出現
     this.lightHelper = new THREE.PointLightHelper(this.pointLight)
-    this.scene.add(this.lightHelper)
 
-    this.scene.add(this.originCube)
-    this.scene.add(this.subCube)
-    this.scene.add(this.pointLight)
+    // グリッドヘルパー作成
+    this.gridHelper = new THREE.GridHelper(100, 100)
+
+    this.scene.add(
+      this.lightHelper,
+      this.gridHelper,
+      this.originCube,
+      this.subCube,
+      this.pointLight
+    )
 
     // 背景の追加
     const backgroundTexture = new THREE.TextureLoader().load(
       "/assets/ground.jpg"
     )
-    this.scene.background = backgroundTexture
+    // this.scene.background = backgroundTexture
 
     // カメラの位置設定
     this.camera.position.z = 5
+
+    // カメラの軌道設定(右クリックしながらスクロール等で制御できる)
+    this.controls = new OrbitControls(
+      this.camera,
+      this.renderer.domElement
+    )
 
     // 更新ループ実行
     this.animate()
@@ -71,6 +85,9 @@ export default class extends Controller {
 
     this.subCube.rotation.x += 0.02
     this.subCube.rotation.z += 0.02
+
+    // カメラの軌道設定
+    this.controls.update()
 
     // シーンとカメラを渡す
     this.renderer.render(this.scene, this.camera)
