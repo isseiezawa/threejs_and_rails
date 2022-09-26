@@ -30,7 +30,7 @@ export default class extends Controller {
 
     // 画像を読み込む
     this.loader = new THREE.TextureLoader()
-    this.texture = this.loader.load('../../assets/ground.jpg')
+    this.texture = this.loader.load('/assets/ground.jpg')
 
     // マテリアルを作成。実際のテクスチャを与えるもの
     this.material = new THREE.MeshStandardMaterial({
