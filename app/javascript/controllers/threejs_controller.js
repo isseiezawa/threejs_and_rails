@@ -27,9 +27,14 @@ export default class extends Controller {
 
     // 実際に表示させるジオメトリを作成する(ここではBOX)
     this.geometry = new THREE.BoxGeometry()
+
+    // 画像を読み込む
+    this.loader = new THREE.TextureLoader()
+    this.texture = this.loader.load('../../assets/ground.jpg')
+
     // マテリアルを作成。実際のテクスチャを与えるもの
     this.material = new THREE.MeshStandardMaterial({
-      color: 0x00ff00,
+      map: this.texture,
       wireframe: false
     })
 
