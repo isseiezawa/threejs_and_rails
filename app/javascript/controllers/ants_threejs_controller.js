@@ -1,12 +1,24 @@
 import { Controller } from "@hotwired/stimulus"
 import * as THREE from "three"
-import { OrbitControls } from "three/examples"
 import { OBJLoader } from "three/OBJLoader"
+// 一人称視点
+import { PointerLockControls } from "three/PointerLockControls"
 
 // Connects to data-controller="ants-threejs"
 export default class extends Controller {
   connect() {
     console.log('helloAnts', this.element)
+
+    // 前進後進変数宣言
+    this.moveForward = false
+    this.moveBackward = false
+    this.moveLeft = false
+    this.moveRight = false
+
+    // 移動速度定義
+    this.velocity = new THREE.Vector3()
+    // 移動方向定義
+    this.direction = new THREE.Vector3()
 
     // シーン作成
     this.scene = new THREE.Scene()
@@ -64,22 +76,92 @@ export default class extends Controller {
     // カメラの位置設定
     this.camera.position.z = 5
 
-    // カメラの軌道設定(右クリックしながらスクロール等で制御できる)
-    this.controls = new OrbitControls(
-      this.camera,
-      this.renderer.domElement
-    )
-    console.log(this)
+    // FPS視点設定
+    this.controls = new PointerLockControls(this.camera, this.renderer.domElement)
+    // クリックしたらルックを始める処理
+    window.addEventListener("click", () => {
+      this.controls.lock()
+    })
+
+    const onKeyDown = (event) => {
+      switch(event.code) {
+        case "KeyW":
+          this.moveForward = true
+          break
+        case "KeyA":
+          this.moveLeft = true
+          break
+        case "KeyS":
+          this.moveBackward = true
+          break
+        case "KeyD":
+          this.moveRight = true
+          break
+      }
+    }
+
+    const onKeyUp = (event) => {
+      switch(event.code) {
+        case "KeyW":
+          this.moveForward = false
+          break
+        case "KeyA":
+          this.moveLeft = false
+          break
+        case "KeyS":
+          this.moveBackward = false
+          break
+        case "KeyD":
+          this.moveRight = false
+          break
+      }
+    }
+
+    // キーボードが押された時の処理
+    document.addEventListener("keydown", onKeyDown)
+    // キーボードが離された時の処理
+    document.addEventListener("keyup", onKeyUp)
+
+    this.prevTime = performance.now()
 
     // ループ処理
     this.animate()
   }
 
   animate() {
+    // フレーム数は各々のパソコンによって異なる。
     requestAnimationFrame(this.animate.bind(this))
 
-    // コントローラの更新
-    this.controls.update()
+    const time = performance.now()
+
+    // 前後左右判定。Number(true) => 1, Number(false) => 0になる
+    this.direction.z = Number(this.moveForward) - Number(this.moveBackward)
+    this.direction.x = Number(this.moveRight) - Number(this.moveLeft)
+
+    // ポインタがONになったら(画面の中に吸い込まれたら)
+    if(this.controls.isLocked) {
+      // 現在のtimeと以前のprevTimeの差を取ってあげるとパソコンのフレームレートを獲得できる
+      const delta = (time - this.prevTime) / 1000
+
+      // 減衰(速度の低下)
+      this.velocity.z -= this.velocity.z * 5.0 * delta
+      this.velocity.x -= this.velocity.x * 5.0 * delta
+
+      if(this.moveForward || this.moveBackward) {
+        // 速度のz座標に前進しているのか後進しているのか代入
+        this.velocity.z -= this.direction.z * 10 * delta
+      }
+
+      if(this.moveLeft || this.moveRight) {
+        this.velocity.x -= this.direction.x * 10 * delta
+      }
+
+      this.prevTime = time
+
+      // 速度を元にカメラの前進後進を決める
+      this.controls.moveForward(-this.velocity.z * delta)
+      this.controls.moveRight(-this.velocity.x * delta)
+    }
 
     this.renderer.render(this.scene, this.camera)
   }
