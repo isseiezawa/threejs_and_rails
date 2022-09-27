@@ -1,0 +1,13 @@
+canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+h1, p {
+  color: #fff;
+}
+main {
+  position: absolute;
+  z-index: 1;
+  /* mainタグがcanvasの上に来るように */
+}
