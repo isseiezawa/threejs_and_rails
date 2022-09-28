@@ -6,7 +6,7 @@ import { PointerLockControls } from "three/PointerLockControls"
 
 // Connects to data-controller="ants-threejs"
 export default class extends Controller {
-  connect() {
+  async connect() {
     console.log('helloAnts', this.element)
 
     // 前進後進変数宣言
@@ -50,8 +50,8 @@ export default class extends Controller {
     this.scene.add(this.directionalLight)
 
     // グリッド
-    this.gridHelper = new THREE.GridHelper(100, 100)
-    this.scene.add(this.gridHelper)
+    // this.gridHelper = new THREE.GridHelper(100, 100)
+    // this.scene.add(this.gridHelper)
 
     // テクスチャの読み込み
     this.textureLoader = new THREE.TextureLoader()
@@ -59,22 +59,27 @@ export default class extends Controller {
 
     // OBJファイルの読み込み
     this.objLoader = new OBJLoader()
-    this.objLoader.load(
-      '/assets/models/obj/ant/ant.obj',
-      // ロード完了時の処理
-      (obj) => {
-        // テクスチャの設定
-        obj.traverse((child) => {
-          if (child.isMesh) child.material.map = this.texture
-        })
 
-        this.scene.add(obj)
-        obj.position.y = 1
-      }
-    )
+    // loadだとモデル作成前に先に他の処理が実行されてしまう
+    this.model = await this.objLoader.loadAsync('/assets/models/obj/ant/ant.obj')
+    this.model.traverse((child) => {
+      if(child.isMesh) child.material.map = this.texture
+    })
+    this.model.position.y = 0
+    this.model.position.x = 0
+    this.model.scale.set(0.1, 0.1, 0.1)
+    console.log(this.model)
+    this.scene.add(this.model)
+
+    // モデルからメッシュを取得して配列に入れる
+    this.meshs = []
+    this.meshs.push(this.model.children[0])
+
+    // camera に Raycaster を作成して下方向に ray を向ける
+    this.raycaster = new THREE.Raycaster(this.camera.position, new THREE.Vector3(0, -1, 0));
 
     // カメラの位置設定
-    this.camera.position.z = 5
+    this.camera.position.z = 2
 
     // FPS視点設定
     this.controls = new PointerLockControls(this.camera, this.renderer.domElement)
@@ -161,6 +166,17 @@ export default class extends Controller {
       // 速度を元にカメラの前進後進を決める
       this.controls.moveForward(-this.velocity.z * delta)
       this.controls.moveRight(-this.velocity.x * delta)
+    }
+
+    // intersectObjects に衝突判定対象のメッシュのリストを渡す
+    this.objs = this.raycaster.intersectObjects( this.meshs );
+    // 衝突判定
+    if(this.objs.length > 0) {
+      const dist = this.objs[0].distance // 衝突判定までの距離
+      // 衝突対象との距離が0.2以下になった時
+      if( dist <= 0.2 ) {
+        console.log('hit')
+      }
     }
 
     this.renderer.render(this.scene, this.camera)
