@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import * as THREE from "three"
+import { MTLLoader } from "three/MTLLoader"
 import { OBJLoader } from "three/OBJLoader"
 // 一人称視点
 import { PointerLockControls } from "three/PointerLockControls"
@@ -50,30 +51,36 @@ export default class extends Controller {
     this.scene.add(this.directionalLight)
 
     // グリッド
-    // this.gridHelper = new THREE.GridHelper(100, 100)
-    // this.scene.add(this.gridHelper)
+    this.gridHelper = new THREE.GridHelper(100, 100)
+    this.gridHelper.position.y = -0.2;
+    this.scene.add(this.gridHelper)
 
     // テクスチャの読み込み
     this.textureLoader = new THREE.TextureLoader()
-    this.texture = this.textureLoader.load('/assets/ground.jpg')
+    this.texture = await this.textureLoader.loadAsync('/assets/models/obj/ant/ant.png')
 
     // OBJファイルの読み込み
     this.objLoader = new OBJLoader()
+    // MTLファイルの読み込み
+    this.mtlLoader = new MTLLoader()
 
     // loadだとモデル作成前に先に他の処理が実行されてしまう
-    this.model = await this.objLoader.loadAsync('/assets/models/obj/ant/ant.obj')
-    this.model.traverse((child) => {
-      if(child.isMesh) child.material.map = this.texture
-    })
-    this.model.position.y = 0
-    this.model.position.x = 0
-    this.model.scale.set(0.1, 0.1, 0.1)
-    console.log(this.model)
-    this.scene.add(this.model)
-
-    // モデルからメッシュを取得して配列に入れる
     this.meshs = []
-    this.meshs.push(this.model.children[0])
+    for(let i = 0; i < 4; i++) {
+      this.mtl = await this.mtlLoader.loadAsync('/assets/models/obj/ant/ant.mtl')
+      // マテリアルをセットしながらオブジェクト作成
+      this.model = await this.objLoader.setMaterials(this.mtl).loadAsync('/assets/models/obj/ant/ant.obj')
+      // オブジェクトとすべての子孫に対してコールバックを実行
+      this.model.traverse((child) => {
+        if(child.isMesh) child.material.map = this.texture
+      })
+      this.model.position.set(i, 0, 0)
+      this.model.scale.set(0.001, 0.001, 0.001)
+      // モデルからメッシュを取得して配列に入れる
+      this.meshs.push(this.model.children[0])
+
+      this.scene.add(this.model)
+    }
 
     // camera に Raycaster を作成して下方向に ray を向ける
     this.raycaster = new THREE.Raycaster(this.camera.position, new THREE.Vector3(0, -1, 0));
@@ -166,18 +173,21 @@ export default class extends Controller {
       // 速度を元にカメラの前進後進を決める
       this.controls.moveForward(-this.velocity.z * delta)
       this.controls.moveRight(-this.velocity.x * delta)
-    }
 
-    // intersectObjects に衝突判定対象のメッシュのリストを渡す
-    this.objs = this.raycaster.intersectObjects( this.meshs );
-    // 衝突判定
-    if(this.objs.length > 0) {
-      const dist = this.objs[0].distance // 衝突判定までの距離
-      // 衝突対象との距離が0.2以下になった時
-      if( dist <= 0.2 ) {
-        console.log('hit')
+      // intersectObjects に衝突判定対象のメッシュのリストを渡す
+      this.objs = this.raycaster.intersectObjects( this.meshs );
+      // 衝突判定
+      if(this.objs.length > 0) {
+        const dist = this.objs[0].distance // 衝突判定までの距離
+        // 衝突対象との距離が1以下になった時
+        console.log(dist)
+        if( dist <= 1 ) {
+          console.log('hit')
+          this.controls.moveForward(-0.2)
+        }
       }
     }
+
 
     this.renderer.render(this.scene, this.camera)
   }
