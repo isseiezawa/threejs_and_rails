@@ -16,6 +16,9 @@ export default class extends Controller {
     this.moveLeft = false
     this.moveRight = false
 
+    // 衝突したオブジェクトのID格納部分
+    this.collisionObjId = null
+
     // 移動速度定義
     this.velocity = new THREE.Vector3()
     // 移動方向定義
@@ -66,24 +69,25 @@ export default class extends Controller {
 
     // loadだとモデル作成前に先に他の処理が実行されてしまう
     this.meshs = []
-    for(let i = 0; i < 4; i++) {
-      this.mtl = await this.mtlLoader.loadAsync('/assets/models/obj/ant/ant.mtl')
+    for(let i = 0; i < 10; i++) {
+      const mtl = await this.mtlLoader.loadAsync('/assets/models/obj/ant/ant.mtl')
       // マテリアルをセットしながらオブジェクト作成
-      this.model = await this.objLoader.setMaterials(this.mtl).loadAsync('/assets/models/obj/ant/ant.obj')
+      const model = await this.objLoader.setMaterials(mtl).loadAsync('/assets/models/obj/ant/ant.obj')
       // オブジェクトとすべての子孫に対してコールバックを実行
-      this.model.traverse((child) => {
+      model.traverse((child) => {
         if(child.isMesh) child.material.map = this.texture
       })
-      this.model.position.set(i, 0, 0)
-      this.model.scale.set(0.001, 0.001, 0.001)
+      model.position.set(Math.random() * 10 - 5, 0, Math.random() * 10 - 5)
+      model.scale.set(0.001, 0.001, 0.001)
+      // y軸回転を90°~270°の間に指定
+      model.rotation.y = Math.PI * (Math.random() * 2 + 1)
       // モデルからメッシュを取得して配列に入れる
-      this.meshs.push(this.model.children[0])
+      this.meshs.push(model.children[0])
 
-      this.scene.add(this.model)
+      this.scene.add(model)
     }
 
-    // camera に Raycaster を作成して下方向に ray を向ける
-    this.raycaster = new THREE.Raycaster(this.camera.position, new THREE.Vector3(0, -1, 0));
+    // this.raycaster = new THREE.Raycaster(this.camera.position, new THREE.Vector3(0, -1, 0));
 
     // カメラの位置設定
     this.camera.position.z = 2
@@ -174,20 +178,24 @@ export default class extends Controller {
       this.controls.moveForward(-this.velocity.z * delta)
       this.controls.moveRight(-this.velocity.x * delta)
 
+      // 現在のカメラの位置を設定(yのみ高さを指定しているのは、判定のraycasterは下向きになっている為)
+      const nowCameraPosition = new THREE.Vector3(this.camera.position.x, 10, this.camera.position.z)
+      // camera に Raycaster を作成して下方向に ray を向ける
+      const raycaster = new THREE.Raycaster(nowCameraPosition, new THREE.Vector3(0, -1, 0));
       // intersectObjects に衝突判定対象のメッシュのリストを渡す
-      this.objs = this.raycaster.intersectObjects( this.meshs );
+      this.objs = raycaster.intersectObjects( this.meshs );
       // 衝突判定
       if(this.objs.length > 0) {
-        const dist = this.objs[0].distance // 衝突判定までの距離
-        // 衝突対象との距離が1以下になった時
-        console.log(dist)
-        if( dist <= 1 ) {
-          console.log('hit')
-          this.controls.moveForward(-0.2)
-        }
+        // 衝突したオブジェクトのID格納
+        this.collisionObjId = this.objs[0].object.id
+        this.controls.moveForward(-0.5)
+      }
+
+      for(let j = 0; j < this.meshs.length; j++ ) {
+        // 衝突した奴が常にこっちを見る
+        if(this.meshs[j].id == this.collisionObjId) this.meshs[j].lookAt(this.camera.position)
       }
     }
-
 
     this.renderer.render(this.scene, this.camera)
   }
