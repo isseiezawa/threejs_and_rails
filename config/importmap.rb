@@ -12,3 +12,4 @@ pin "three/MTLLoader", to: "https://ga.jspm.io/npm:three@0.144.0/examples/jsm/lo
 pin "three/OBJLoader", to: "https://ga.jspm.io/npm:three@0.144.0/examples/jsm/loaders/OBJLoader.js
 "
 pin "three/PointerLockControls", to: "https://ga.jspm.io/npm:three@0.144.0/examples/jsm/controls/PointerLockControls.js"
+pin "three-mesh-ui", to: "https://unpkg.com/three-mesh-ui@6.4.5/build/three-mesh-ui.module.js"

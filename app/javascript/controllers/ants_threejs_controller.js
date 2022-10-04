@@ -4,6 +4,8 @@ import { MTLLoader } from "three/MTLLoader"
 import { OBJLoader } from "three/OBJLoader"
 // 一人称視点
 import { PointerLockControls } from "three/PointerLockControls"
+// 3D文字盤
+import * as ThreeMeshUI from "three-mesh-ui"
 
 // Connects to data-controller="ants-threejs"
 export default class extends Controller {
@@ -77,7 +79,12 @@ export default class extends Controller {
       model.traverse((child) => {
         if(child.isMesh) child.material.map = this.texture
       })
-      model.position.set(Math.random() * 10 - 5, 0, Math.random() * 10 - 5)
+      const randomNumber1 = Math.random() * 10 - 5
+      const randomNumber2 = Math.random() * 10 - 5
+      // モデルとMeshにポジションをセット
+      model.position.set(randomNumber1, 0, randomNumber2)
+      model.children[0].position.set(randomNumber1, 0, randomNumber2)
+      // 大きさ設定
       model.scale.set(0.001, 0.001, 0.001)
       // y軸回転を90°~270°の間に指定
       model.rotation.y = Math.PI * (Math.random() * 2 + 1)
@@ -86,8 +93,6 @@ export default class extends Controller {
 
       this.scene.add(model)
     }
-
-    // this.raycaster = new THREE.Raycaster(this.camera.position, new THREE.Vector3(0, -1, 0));
 
     // カメラの位置設定
     this.camera.position.z = 2
@@ -140,8 +145,45 @@ export default class extends Controller {
 
     this.prevTime = performance.now()
 
+    // テキストの雛形作成
+    this.createText()
+
     // ループ処理
     this.animate()
+  }
+
+  createText() {
+    // 文字を入れるコンテナ作成
+    this.textContainer = new ThreeMeshUI.Block({
+      width: 1.2,
+      height: 0.5,
+      padding: 0.1,
+      justifyContent: 'center',
+      textAlign: 'left',
+      fontFamily: '/assets/font/font.json',
+      fontTexture: '/assets/font/font.png'
+    })
+
+    // 衝突があるまで非表示
+    this.textContainer.visible = false
+
+    this.scene.add(this.textContainer)
+
+    // テキスト雛形作成
+    this.textMesh = new ThreeMeshUI.Text({
+      fontSize: 0.05
+    })
+
+    this.textContainer.add(this.textMesh)
+  }
+
+  setText(text, position) {
+    this.textContainer.position.set(position.x, 0, position.z)
+    this.textMesh.set({
+      content: text
+    })
+
+    this.textContainer.add(this.textMesh)
   }
 
   animate() {
@@ -189,13 +231,23 @@ export default class extends Controller {
         // 衝突したオブジェクトのID格納
         this.collisionObjId = this.objs[0].object.id
         this.controls.moveForward(-0.5)
+
+        // テキストを表示させる
+        this.textContainer.visible = true
+        this.setText('いっせい', this.objs[0].object.position)
       }
 
       for(let j = 0; j < this.meshs.length; j++ ) {
         // 衝突した奴が常にこっちを見る
-        if(this.meshs[j].id == this.collisionObjId) this.meshs[j].lookAt(this.camera.position)
+        if(this.meshs[j].id == this.collisionObjId) {
+          this.meshs[j].lookAt(this.camera.position)
+        }
       }
+
+      this.textContainer.lookAt(this.camera.position)
     }
+
+    ThreeMeshUI.update();
 
     this.renderer.render(this.scene, this.camera)
   }
