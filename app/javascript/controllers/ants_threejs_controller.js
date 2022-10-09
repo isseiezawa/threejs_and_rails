@@ -156,7 +156,7 @@ export default class extends Controller {
     // 文字を入れるコンテナ作成
     this.textContainer = new ThreeMeshUI.Block({
       width: 1.2,
-      height: 0.5,
+      height: 1,
       padding: 0.1,
       justifyContent: 'center',
       textAlign: 'left',
@@ -177,13 +177,33 @@ export default class extends Controller {
     this.textContainer.add(this.textMesh)
   }
 
-  setText(text, position) {
-    this.textContainer.position.set(position.x, 0, position.z)
+  setText(text) {
+    // 文字を表示
+    this.textContainer.visible = true
     this.textMesh.set({
       content: text
     })
 
     this.textContainer.add(this.textMesh)
+  }
+
+  setTextPosition(collisionObject) {
+    const vec = new THREE.Vector3()
+    // subVectors(a: vector, b: vector)-> ベクトルa-bを実行
+    vec.subVectors(this.camera.position, collisionObject.position)
+
+    // multiplyScalar(s: Float)-> ベクトルをスカラーで乗算
+    const vec2 = vec.multiplyScalar(0.5)
+
+    // addVectors(a: Vector3, b: Vector3)-> ベクトルa+bを実行
+    vec.addVectors(collisionObject.position, vec2)
+
+    // 文字盤の位置座標に計算したベクトルをセット
+    this.textContainer.position.copy(vec)
+
+    this.textContainer.lookAt(this.camera.position)
+    // 文字盤はこっちに向いているので、カメラの動きをコピーすれば反転して寄ってくるようになる
+    this.textContainer.rotation.copy(this.camera.rotation)
   }
 
   animate() {
@@ -233,18 +253,16 @@ export default class extends Controller {
         this.controls.moveForward(-0.5)
 
         // テキストを表示させる
-        this.textContainer.visible = true
-        this.setText('いっせい', this.objs[0].object.position)
+        this.setText('いっせい')
       }
 
       for(let j = 0; j < this.meshs.length; j++ ) {
         // 衝突した奴が常にこっちを見る
         if(this.meshs[j].id == this.collisionObjId) {
           this.meshs[j].lookAt(this.camera.position)
+          this.setTextPosition(this.meshs[j])
         }
       }
-
-      this.textContainer.lookAt(this.camera.position)
     }
 
     ThreeMeshUI.update();
