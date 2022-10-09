@@ -156,10 +156,11 @@ export default class extends Controller {
     // 文字を入れるコンテナ作成
     this.textContainer = new ThreeMeshUI.Block({
       width: 1.2,
-      height: 1,
+      height: 0.5,
       padding: 0.1,
-      justifyContent: 'center',
-      textAlign: 'left',
+      backgroundOpacity: 0,
+      contentDirection: 'row', // 横並びに
+      justifyContent: 'space-between',
       fontFamily: '/assets/font/font.json',
       fontTexture: '/assets/font/font.png'
     })
@@ -169,22 +170,83 @@ export default class extends Controller {
 
     this.scene.add(this.textContainer)
 
+    // 画像を入れるブロック
+    this.imageBlock = new ThreeMeshUI.Block({
+      width: 0.4,
+      height: 0.4,
+      padding: 0.04,
+      backgroundColor: new THREE.Color( 0xffffff ),
+      borderColor: new THREE.Color( 0x000000 ),
+      borderWidth: 0.002,
+      borderRadius: 0.05,
+      offset: 0.1 //親要素から小要素までの距離
+    })
+
+    // テキストを入れるブロック
+    this.textBlock = new ThreeMeshUI.Block({
+      width: 0.4,
+      height: 0.4,
+      padding: 0.04,
+      fontColor: new THREE.Color( 0x000000 ),
+      textAlign: 'left',
+      bestFit: 'auto', // 文字を要素内に収める
+      backgroundColor: new THREE.Color( 0xffffff ),
+      borderColor: new THREE.Color( 0x000000 ),
+      borderWidth: 0.002,
+      borderRadius: 0.05,
+      offset: 0.1
+    })
+
     // テキスト雛形作成
-    this.textMesh = new ThreeMeshUI.Text({
+    this.text = new ThreeMeshUI.Text({
       fontSize: 0.05
     })
 
-    this.textContainer.add(this.textMesh)
-  }
+    this.textBlock.add(this.text)
 
-  setText(text) {
-    // 文字を表示
-    this.textContainer.visible = true
-    this.textMesh.set({
-      content: text
+    // 名前を挿入するブロック(名前の部分を下の方に設置する為)
+    this.nameContainer = new ThreeMeshUI.Block({
+      justifyContent: 'end',
+      width: 0.16,
+      height: 0.5,
+      padding: 0.04,
+      backgroundOpacity: 0
     })
 
-    this.textContainer.add(this.textMesh)
+    this.nameBlock = new ThreeMeshUI.Block({
+      width: 0.16,
+      height: 0.05,
+      fontColor: new THREE.Color( 0x800000 ),
+      backgroundOpacity: 0,
+      textAlign: 'center',
+      bestFit: 'auto',
+    })
+
+    this.nameContainer.add(this.nameBlock)
+
+    // 名前テキスト雛形作成
+    this.name = new ThreeMeshUI.Text({
+      fontSize: 0.05
+    })
+
+    this.nameBlock.add(this.name)
+
+    this.textContainer.add(
+      this.imageBlock,
+      this.nameContainer,
+      this.textBlock
+    )
+  }
+
+  setOfContents(text = '', name = '働かないあり') {
+    // 文字を表示
+    this.textContainer.visible = true
+    this.text.set({
+      content: text
+    })
+    this.name.set({
+      content: name
+    })
   }
 
   setTextPosition(collisionObject) {
@@ -253,7 +315,7 @@ export default class extends Controller {
         this.controls.moveForward(-0.5)
 
         // テキストを表示させる
-        this.setText('いっせい')
+        this.setOfContents('とてもいい天気ですね！', 'いっせい')
       }
 
       for(let j = 0; j < this.meshs.length; j++ ) {
