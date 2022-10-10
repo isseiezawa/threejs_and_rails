@@ -175,9 +175,7 @@ export default class extends Controller {
       width: 0.4,
       height: 0.4,
       padding: 0.04,
-      backgroundColor: new THREE.Color( 0xffffff ),
-      borderColor: new THREE.Color( 0x000000 ),
-      borderWidth: 0.002,
+      backgroundSize: 'stretch',
       borderRadius: 0.05,
       offset: 0.1 //親要素から小要素までの距離
     })
@@ -190,10 +188,11 @@ export default class extends Controller {
       fontColor: new THREE.Color( 0x000000 ),
       textAlign: 'left',
       bestFit: 'auto', // 文字を要素内に収める
-      backgroundColor: new THREE.Color( 0xffffff ),
-      borderColor: new THREE.Color( 0x000000 ),
-      borderWidth: 0.002,
-      borderRadius: 0.05,
+      backgroundOpacity: 0,
+      // backgroundColor: new THREE.Color( 0xffffff ),
+      // borderColor: new THREE.Color( 0x000000 ),
+      // borderWidth: 0.002,
+      // borderRadius: 0.05,
       offset: 0.1
     })
 
@@ -238,7 +237,7 @@ export default class extends Controller {
     )
   }
 
-  setOfContents(text = '', name = '働かないあり') {
+  setOfContents(text = '', name = '働かないあり', image_url) {
     // 文字を表示
     this.textContainer.visible = true
     this.text.set({
@@ -247,6 +246,15 @@ export default class extends Controller {
     this.name.set({
       content: name
     })
+
+    if(image_url) {
+      const loader = new THREE.TextureLoader()
+      loader.load(image_url, (texture) => {
+        this.imageBlock.set({
+          backgroundTexture: texture
+        })
+      })
+    }
   }
 
   setTextPosition(collisionObject) {
@@ -315,7 +323,7 @@ export default class extends Controller {
         this.controls.moveForward(-0.5)
 
         // テキストを表示させる
-        this.setOfContents('とてもいい天気ですね！', 'いっせい')
+        this.setOfContents('とてもいい天気ですね！働きたくなくなってしまいます！', 'いっせい', '../../assets/ant-example.jpg')
       }
 
       for(let j = 0; j < this.meshs.length; j++ ) {
