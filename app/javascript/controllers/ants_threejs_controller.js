@@ -44,6 +44,15 @@ export default class extends Controller {
     // DOM要素を追加する
     document.body.appendChild(this.renderer.domElement)
 
+    // 画面サイズの変更処理
+    const onWindowResize = () => {
+      this.camera.aspect = window.innerWidth / window.innerHeight;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize( window.innerWidth, window.innerHeight );
+    }
+
+    window.addEventListener( 'resize', onWindowResize );
+
     // 環境光源を作成。3D空間全体に均等に光を当てる。
     // new THREE.AmbientLight(色, 光の強さ)
     this.ambientLight = new THREE.AmbientLight(0xffffff, 0.4)
