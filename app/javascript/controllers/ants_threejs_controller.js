@@ -108,6 +108,7 @@ export default class extends Controller {
     // クリックしたらルックを始める処理
     window.addEventListener("click", () => {
       this.controls.lock()
+      this.startAudio()
     })
 
     const onKeyDown = (event) => {
@@ -344,5 +345,27 @@ export default class extends Controller {
     ThreeMeshUI.update();
 
     this.renderer.render(this.scene, this.camera)
+  }
+
+  startAudio() {
+    // AudioListenerを作成し、カメラに追加する。
+    const listener = new THREE.AudioListener()
+    this.camera.add(listener)
+
+    // グローバルなオーディオソースを作成する
+    const audio = new THREE.Audio( listener )
+    const audioFile = 'assets/ant.mp3'
+
+    if ( /(iPad|iPhone|iPod)/g.test( navigator.userAgent ) ) {
+      const loader = new THREE.AudioLoader()
+      loader.load( audioFile, ( buffer ) => {
+        audio.setBuffer( buffer )
+        audio.play()
+      })
+    } else {
+      const mediaElement = new Audio( audioFile )
+      mediaElement.play()
+      audio.setMediaElementSource( mediaElement )
+    }
   }
 }
