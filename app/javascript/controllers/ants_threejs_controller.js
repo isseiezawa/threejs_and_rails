@@ -71,7 +71,7 @@ export default class extends Controller {
 
     // テクスチャの読み込み
     this.textureLoader = new THREE.TextureLoader()
-    this.texture = await this.textureLoader.loadAsync('/assets/models/obj/ant/ant.png')
+    this.texture = await this.textureLoader.loadAsync('/assets/obj/ant/ant.png')
 
     // OBJファイルの読み込み
     this.objLoader = new OBJLoader()
@@ -81,9 +81,9 @@ export default class extends Controller {
     // loadだとモデル作成前に先に他の処理が実行されてしまう
     this.meshs = []
     for(let i = 0; i < 10; i++) {
-      const mtl = await this.mtlLoader.loadAsync('/assets/models/obj/ant/ant.mtl')
+      const mtl = await this.mtlLoader.loadAsync('/assets/obj/ant/ant.mtl')
       // マテリアルをセットしながらオブジェクト作成
-      const model = await this.objLoader.setMaterials(mtl).loadAsync('/assets/models/obj/ant/ant.obj')
+      const model = await this.objLoader.setMaterials(mtl).loadAsync('/assets/obj/ant/ant.obj')
       // オブジェクトとすべての子孫に対してコールバックを実行
       model.traverse((child) => {
         if(child.isMesh) child.material.map = this.texture
@@ -102,9 +102,6 @@ export default class extends Controller {
 
       this.scene.add(model)
     }
-
-    // カメラの位置設定
-    this.camera.position.z = 2
 
     // FPS視点設定
     this.controls = new PointerLockControls(this.camera, this.renderer.domElement)
@@ -170,8 +167,8 @@ export default class extends Controller {
       backgroundOpacity: 0,
       contentDirection: 'row', // 横並びに
       justifyContent: 'space-between',
-      fontFamily: '/assets/font/font.json',
-      fontTexture: '/assets/font/font.png'
+      fontFamily: '/assets/font.json',
+      fontTexture: '/assets/font.png'
     })
 
     // 衝突があるまで非表示
@@ -332,7 +329,7 @@ export default class extends Controller {
         this.controls.moveForward(-0.5)
 
         // テキストを表示させる
-        this.setOfContents('とてもいい天気ですね！働きたくなくなってしまいます！', 'いっせい', '../../assets/ant-example.jpg')
+        this.setOfContents('とてもいい天気ですね！働きたくなくなってしまいます！', 'いっせい', '/assets/ant-example.jpg')
       }
 
       for(let j = 0; j < this.meshs.length; j++ ) {
