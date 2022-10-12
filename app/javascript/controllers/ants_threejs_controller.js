@@ -69,39 +69,18 @@ export default class extends Controller {
     this.gridHelper.position.y = -0.2;
     this.scene.add(this.gridHelper)
 
-    // テクスチャの読み込み
-    this.textureLoader = new THREE.TextureLoader()
-    this.texture = await this.textureLoader.loadAsync('/assets/obj/ant/ant.png')
-
-    // OBJファイルの読み込み
-    this.objLoader = new OBJLoader()
-    // MTLファイルの読み込み
-    this.mtlLoader = new MTLLoader()
-
-    // loadだとモデル作成前に先に他の処理が実行されてしまう
     this.meshs = []
-    for(let i = 0; i < 10; i++) {
-      const mtl = await this.mtlLoader.loadAsync('/assets/obj/ant/ant.mtl')
-      // マテリアルをセットしながらオブジェクト作成
-      const model = await this.objLoader.setMaterials(mtl).loadAsync('/assets/obj/ant/ant.obj')
-      // オブジェクトとすべての子孫に対してコールバックを実行
-      model.traverse((child) => {
-        if(child.isMesh) child.material.map = this.texture
-      })
-      const randomNumber1 = Math.random() * 10 - 5
-      const randomNumber2 = Math.random() * 10 - 5
-      // モデルとMeshにポジションをセット
-      model.position.set(randomNumber1, 0, randomNumber2)
-      model.children[0].position.set(randomNumber1, 0, randomNumber2)
-      // 大きさ設定
-      model.scale.set(0.001, 0.001, 0.001)
-      // y軸回転を90°~270°の間に指定
-      model.rotation.y = Math.PI * (Math.random() * 2 + 1)
-      // モデルからメッシュを取得して配列に入れる
-      this.meshs.push(model.children[0])
-
-      this.scene.add(model)
-    }
+    const antTexture = '/assets/obj/ant/ant.png'
+    const antMaterial = '/assets/obj/ant/ant.mtl'
+    const antObject = '/assets/obj/ant/ant.obj'
+    this.createObject(antTexture, antMaterial, antObject, 10)
+    
+    this.group = new THREE.Group()
+    this.scene.add(this.group)
+    const rockTexture = '/assets/obj/rock/rock.png'
+    const rockMaterial = '/assets/obj/rock/rock.mtl'
+    const rockObject = '/assets/obj/rock/rock.obj'
+    this.createObject(rockTexture, rockMaterial, rockObject, 80, true)
 
     // FPS視点設定
     this.controls = new PointerLockControls(this.camera, this.renderer.domElement)
@@ -157,6 +136,57 @@ export default class extends Controller {
 
     // ループ処理
     this.animate()
+  }
+
+  async createObject(textureFile, materialFile, objectFile, amount, obstacle=false) {
+    // テクスチャの読み込み
+    const textureLoader = new THREE.TextureLoader()
+    // loadだとモデル作成前に先に他の処理が実行されてしまう
+    const texture = await textureLoader.loadAsync(textureFile)
+    // OBJファイルの読み込み
+    const objLoader = new OBJLoader()
+    // MTLファイルの読み込み
+    const mtlLoader = new MTLLoader()
+
+    for(let i = 0; i < amount; i++) {
+      const mtl = await mtlLoader.loadAsync(materialFile)
+      // マテリアルをセットしながらオブジェクト作成
+      const model = await objLoader.setMaterials(mtl).loadAsync(objectFile)
+      // オブジェクトとすべての子孫に対してコールバックを実行
+      model.traverse((child) => {
+        if(child.isMesh) child.material.map = texture
+      })
+      if(obstacle) {
+        // 障害物を円周上に作成
+        //θ[rad] 2π = 360°
+        const radian = i / 40 * Math.PI
+        model.position.set(
+          10 * Math.cos(radian),
+          -0.5,
+          10 * Math.sin(radian)
+        )
+        model.children[0].position.set(
+          Math.cos(radian),
+          -0.5,
+          Math.sin(radian)
+        )
+        model.scale.set(0.005, 0.005, 0.005)
+        this.group.add(model)
+      } else {
+        const randomNumber1 = Math.random() * 10 - 5
+        const randomNumber2 = Math.random() * 10 - 5
+        // モデルとMeshにポジションをセット
+        model.position.set(randomNumber1, 0, randomNumber2)
+        model.children[0].position.set(randomNumber1, 0, randomNumber2)
+        model.scale.set(0.001, 0.001, 0.001)
+        // モデルからメッシュを取得して配列に入れる
+        this.meshs.push(model.children[0])
+
+        // y軸回転を90°~270°の間に指定
+        this.scene.add(model)
+      }
+      model.rotation.y = Math.PI * (Math.random() * 2 + 1)
+    }
   }
 
   createText() {
@@ -360,10 +390,12 @@ export default class extends Controller {
       const loader = new THREE.AudioLoader()
       loader.load( audioFile, ( buffer ) => {
         audio.setBuffer( buffer )
+        audio.setLoop( true )
         audio.play()
       })
     } else {
       const mediaElement = new Audio( audioFile )
+      mediaElement.loop = true
       mediaElement.play()
       audio.setMediaElementSource( mediaElement )
     }
