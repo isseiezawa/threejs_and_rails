@@ -33,8 +33,9 @@ export default class extends Controller {
       75,
       window.innerWidth / window.innerHeight,
       0.1,
-      1000
+      10
     )
+    this.camera.position.y = 0.2
     // レンダラー作成
     this.renderer = new THREE.WebGLRenderer()
     // 空間の色設定
@@ -64,11 +65,6 @@ export default class extends Controller {
     this.directionalLight.position.set(-1, 1, 1).normalize();
     this.scene.add(this.directionalLight)
 
-    // グリッド
-    this.gridHelper = new THREE.GridHelper(100, 100)
-    this.gridHelper.position.y = -0.2;
-    this.scene.add(this.gridHelper)
-
     this.meshs = []
     const antTexture = '/assets/obj/ant/ant.png'
     const antMaterial = '/assets/obj/ant/ant.mtl'
@@ -81,6 +77,14 @@ export default class extends Controller {
     const rockMaterial = '/assets/obj/rock/rock.mtl'
     const rockObject = '/assets/obj/rock/rock.obj'
     this.createObject(rockTexture, rockMaterial, rockObject, 80, true)
+
+    // 地面作成
+    const groundTexture = new THREE.TextureLoader().load('/assets/obj/ground/ground.jpg')
+    const groundObj = await new OBJLoader().loadAsync('/assets/obj/ground/ground.obj')
+    groundObj.children[0].material.map = groundTexture
+    groundObj.scale.set(0.05, 0.008, 0.05)
+    groundObj.position.y = -0.2
+    this.scene.add(groundObj)
 
     // FPS視点設定
     this.controls = new PointerLockControls(this.camera, this.renderer.domElement)
