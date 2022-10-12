@@ -65,14 +65,13 @@ export default class extends Controller {
     this.directionalLight.position.set(-1, 1, 1).normalize();
     this.scene.add(this.directionalLight)
 
-    this.meshs = []
+    this.modelMeshs = []
     const antTexture = '/assets/obj/ant/ant.png'
     const antMaterial = '/assets/obj/ant/ant.mtl'
     const antObject = '/assets/obj/ant/ant.obj'
     this.createObject(antTexture, antMaterial, antObject, 10)
     
-    this.group = new THREE.Group()
-    this.scene.add(this.group)
+    this.obstacleMeshs = []
     const rockTexture = '/assets/obj/rock/rock.png'
     const rockMaterial = '/assets/obj/rock/rock.mtl'
     const rockObject = '/assets/obj/rock/rock.obj'
@@ -170,12 +169,13 @@ export default class extends Controller {
           10 * Math.sin(radian)
         )
         model.children[0].position.set(
-          Math.cos(radian),
+          10 * Math.cos(radian),
           -0.5,
-          Math.sin(radian)
+          10 * Math.sin(radian)
         )
         model.scale.set(0.005, 0.005, 0.005)
-        this.group.add(model)
+
+        this.obstacleMeshs.push(model.children[0])
       } else {
         const randomNumber1 = Math.random() * 10 - 5
         const randomNumber2 = Math.random() * 10 - 5
@@ -184,12 +184,11 @@ export default class extends Controller {
         model.children[0].position.set(randomNumber1, 0, randomNumber2)
         model.scale.set(0.001, 0.001, 0.001)
         // モデルからメッシュを取得して配列に入れる
-        this.meshs.push(model.children[0])
-
-        // y軸回転を90°~270°の間に指定
-        this.scene.add(model)
+        this.modelMeshs.push(model.children[0])
       }
+      // y軸回転を90°~270°の間に指定
       model.rotation.y = Math.PI * (Math.random() * 2 + 1)
+      this.scene.add(model)
     }
   }
 
@@ -229,8 +228,8 @@ export default class extends Controller {
       fontColor: new THREE.Color( 0x000000 ),
       textAlign: 'left',
       bestFit: 'auto', // 文字を要素内に収める
-      backgroundOpacity: 0,
-      // backgroundColor: new THREE.Color( 0xffffff ),
+      // backgroundOpacity: 0,
+      backgroundColor: new THREE.Color( 0xffffff ),
       // borderColor: new THREE.Color( 0x000000 ),
       // borderWidth: 0.002,
       // borderRadius: 0.05,
@@ -257,7 +256,8 @@ export default class extends Controller {
       width: 0.16,
       height: 0.05,
       fontColor: new THREE.Color( 0x800000 ),
-      backgroundOpacity: 0,
+      backgroundColor: new THREE.Color( 0xffffff ),
+      backgroundOpacity: 0.2,
       textAlign: 'center',
       bestFit: 'auto',
     })
@@ -289,12 +289,15 @@ export default class extends Controller {
     })
 
     if(image_url) {
+      this.imageBlock.visible = true
       const loader = new THREE.TextureLoader()
       loader.load(image_url, (texture) => {
         this.imageBlock.set({
           backgroundTexture: texture
         })
       })
+    } else {
+      this.imageBlock.visible = false
     }
   }
 
@@ -356,22 +359,30 @@ export default class extends Controller {
       // camera に Raycaster を作成して下方向に ray を向ける
       const raycaster = new THREE.Raycaster(nowCameraPosition, new THREE.Vector3(0, -1, 0));
       // intersectObjects に衝突判定対象のメッシュのリストを渡す
-      this.objs = raycaster.intersectObjects( this.meshs );
-      // 衝突判定
-      if(this.objs.length > 0) {
+      this.modelObjs = raycaster.intersectObjects( this.modelMeshs );
+
+      // モデルとの衝突判定
+      if(this.modelObjs.length > 0) {
         // 衝突したオブジェクトのID格納
-        this.collisionObjId = this.objs[0].object.id
+        this.collisionObjId = this.modelObjs[0].object.id
         this.controls.moveForward(-0.5)
 
         // テキストを表示させる
         this.setOfContents('とてもいい天気ですね！働きたくなくなってしまいます！', 'いっせい', '/assets/ant-example.jpg')
       }
 
-      for(let j = 0; j < this.meshs.length; j++ ) {
+      // 障害物との衝突判定
+      this.obstacleObjs = raycaster.intersectObjects( this.obstacleMeshs );
+      if(this.obstacleObjs.length > 0) {
+        this.controls.moveForward(this.velocity.z * delta)
+        this.controls.moveRight(this.velocity.x * delta)
+      }
+
+      for(let j = 0; j < this.modelMeshs.length; j++ ) {
         // 衝突した奴が常にこっちを見る
-        if(this.meshs[j].id == this.collisionObjId) {
-          this.meshs[j].lookAt(this.camera.position)
-          this.setTextPosition(this.meshs[j])
+        if(this.modelMeshs[j].id == this.collisionObjId) {
+          this.modelMeshs[j].lookAt(this.camera.position)
+          this.setTextPosition(this.modelMeshs[j])
         }
       }
     }
