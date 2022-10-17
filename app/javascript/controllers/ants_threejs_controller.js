@@ -33,7 +33,7 @@ export default class extends Controller {
       75,
       window.innerWidth / window.innerHeight,
       0.1,
-      10
+      100
     )
     this.camera.position.y = 0.2
     // レンダラー作成
@@ -84,6 +84,11 @@ export default class extends Controller {
     groundObj.scale.set(0.05, 0.008, 0.05)
     groundObj.position.y = -0.2
     this.scene.add(groundObj)
+
+    // 空作成
+    const skyArr = this.createPathStrings('sky')
+    this.scene.background = await new THREE.CubeTextureLoader()
+      .loadAsync(skyArr)
 
     // FPS視点設定
     this.controls = new PointerLockControls(this.camera, this.renderer.domElement)
@@ -318,6 +323,18 @@ export default class extends Controller {
     this.textContainer.lookAt(this.camera.position)
     // 文字盤はこっちに向いているので、カメラの動きをコピーすれば反転して寄ってくるようになる
     this.textContainer.rotation.copy(this.camera.rotation)
+  }
+
+  createPathStrings(fileName) {
+    const basePath = '/assets/'
+    const baseFileName = basePath + fileName
+    const fileType = '.png'
+    const side = ['right', 'left', 'top', 'bottom', 'front', 'back']
+    const pathStrings = side.map(side => {
+      return baseFileName + '/' + side + fileType
+    })
+
+    return pathStrings
   }
 
   animate() {
