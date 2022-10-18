@@ -25,6 +25,8 @@ export default class extends Controller {
     this.velocity = new THREE.Vector3()
     // 移動方向定義
     this.direction = new THREE.Vector3()
+    // 発射物の進行方向定義
+    this.directionVector = new THREE.Vector3(0, 0, 0)
 
     // シーン作成
     this.scene = new THREE.Scene()
@@ -136,6 +138,27 @@ export default class extends Controller {
     document.addEventListener("keydown", onKeyDown)
     // キーボードが離された時の処理
     document.addEventListener("keyup", onKeyUp)
+
+    // 餌発射
+    const shoot = () => {
+      if(this.bullet) {
+        // 一個前の発射された餌を削除
+        this.scene.remove(this.bullet)
+      }
+      const bulletGeometry = new THREE.SphereGeometry(1, 10, 10)
+      const bulletMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffff00
+      })
+      this.bullet = new THREE.Mesh( bulletGeometry, bulletMaterial )
+      this.bullet.scale.set(0.1, 0.1, 0.1)
+      this.bullet.position.copy(this.camera.position)
+      // カメラが見ているワールド空間の方向を表す。結果はこのVector3にコピーされる
+      this.camera.getWorldDirection(this.directionVector)
+      this.scene.add(this.bullet)
+    }
+
+    // ダブルクリック時
+    document.addEventListener("dblclick", shoot)
 
     this.prevTime = performance.now()
 
@@ -402,6 +425,12 @@ export default class extends Controller {
           this.setTextPosition(this.modelMeshs[j])
         }
       }
+    }
+
+    if(this.bullet) {
+      this.bullet.position.x += 0.1 * this.directionVector.x
+      this.bullet.position.y += 0.1 * this.directionVector.y
+      this.bullet.position.z += 0.1 * this.directionVector.z
     }
 
     ThreeMeshUI.update();
