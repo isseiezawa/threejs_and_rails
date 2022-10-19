@@ -97,8 +97,12 @@ export default class extends Controller {
     // クリックしたらルックを始める処理
     window.addEventListener("click", () => {
       this.controls.lock()
-      this.startAudio()
     })
+    window.addEventListener("click", () => {
+        this.startAudio()
+      },
+      { once: true }
+    )
 
     const onKeyDown = (event) => {
       switch(event.code) {
