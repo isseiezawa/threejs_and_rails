@@ -149,13 +149,30 @@ export default class extends Controller {
         // 一個前の発射された餌を削除
         this.scene.remove(this.bullet)
       }
-      const bulletGeometry = new THREE.SphereGeometry(1, 10, 10)
+      
+      // ハート型の餌発射
+      const heartShape = new THREE.Shape();
+      const x = 0, y = 0;
+      heartShape.moveTo( x, y );
+      heartShape.bezierCurveTo( x + 5, y + 5, x + 4, y, x, y );
+      heartShape.bezierCurveTo( x - 6, y, x - 6, y + 7,x - 6, y + 7 );
+      heartShape.bezierCurveTo( x - 6, y + 11, x - 3, y + 15.4, x + 5, y + 19 );
+      heartShape.bezierCurveTo( x + 12, y + 15.4, x + 16, y + 11, x + 16, y + 7 );
+      heartShape.bezierCurveTo( x + 16, y + 7, x + 16, y, x + 10, y );
+      heartShape.bezierCurveTo( x + 7, y, x + 5, y + 5, x + 5, y + 5 );
+
+      // 厚みを出す設定
+      const extrudeSettings = { depth: 8, bevelEnabled: true, bevelSegments: 2, steps: 2, bevelSize: 1, bevelThickness: 1 };
+
+      const heartBulletGeometry = new THREE.ExtrudeGeometry( heartShape, extrudeSettings )
       const bulletMaterial = new THREE.MeshStandardMaterial({
-        color: 0xffff00
+        color: 0xff0000
       })
-      this.bullet = new THREE.Mesh( bulletGeometry, bulletMaterial )
-      this.bullet.scale.set(0.1, 0.1, 0.1)
+      this.bullet = new THREE.Mesh( heartBulletGeometry, bulletMaterial )
+      this.bullet.scale.set(0.01, 0.01, 0.01)
       this.bullet.position.copy(this.camera.position)
+      this.bullet.rotation.copy(this.camera.rotation)
+
       // カメラが見ているワールド空間の方向を表す。結果はこのVector3にコピーされる
       this.camera.getWorldDirection(this.directionVector)
       this.scene.add(this.bullet)
@@ -429,12 +446,25 @@ export default class extends Controller {
           this.setTextPosition(this.modelMeshs[j])
         }
       }
-    }
 
-    if(this.bullet) {
-      this.bullet.position.x += 0.1 * this.directionVector.x
-      this.bullet.position.y += 0.1 * this.directionVector.y
-      this.bullet.position.z += 0.1 * this.directionVector.z
+      // 発射物とモデルとの当たり判定
+      if(this.bullet) {
+        this.bullet.position.x += this.directionVector.x * delta
+        this.bullet.position.y += this.directionVector.y * delta
+        this.bullet.position.z += this.directionVector.z * delta
+        this.bullet.rotation.z += delta * 2
+
+        const bulletRaycaster = new THREE.Raycaster(this.bullet.position, new THREE.Vector3(0, -1, 0), 0, 0.2);
+        const hitObjs = bulletRaycaster.intersectObjects( this.modelMeshs )
+
+        if(hitObjs.length > 0) {
+          console.log(hitObjs)
+          this.bullet.material.dispose()
+          this.bullet.geometry.dispose()
+          this.scene.remove(this.bullet)
+          console.log('ライク')
+        }
+      }
     }
 
     ThreeMeshUI.update();
