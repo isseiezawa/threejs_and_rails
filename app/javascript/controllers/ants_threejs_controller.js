@@ -12,6 +12,53 @@ export default class extends Controller {
   async connect() {
     console.log('helloAnts', this.element)
 
+    // のちにaxiosで取得するデータ
+    const users = [
+      {
+        id: 1,
+        name: 'いっせい',
+        texture: '/assets/obj/ant/ant.png',
+        material: '/assets/obj/ant/ant.mtl',
+        object: '/assets/obj/ant/ant.obj',
+        post: [
+          {
+            text: '天気がいいですね',
+            image_url: '/assets/ant-example.jpg' 
+          }
+        ]
+      },
+      {
+        id: 2,
+        name: '太郎',
+        texture: '/assets/obj/ant/ant.png',
+        material: '/assets/obj/ant/ant.mtl',
+        object: '/assets/obj/ant/ant.obj',
+        post: [
+          {
+            text: '豆腐の腐は柔らかいという意味です豆を柔らかくして作られたものであって腐った豆を使用しているのでもなければ豆を腐らせて作るわけでもありません',
+            image_url: '/assets/ant-example.jpg' 
+          }
+        ]
+      },
+      {
+        id: 3,
+        name: 'ひとみ',
+        texture: '/assets/obj/ant/ant.png',
+        material: '/assets/obj/ant/ant.mtl',
+        object: '/assets/obj/ant/ant.obj',
+        post: [
+          {
+            text: '伯方の塩はメキシコやオーストラリアの天日塩田塩を使用しています商品パッケージにもきちんと書いてあります',
+            image_url: '/assets/ant-example.jpg' 
+          }
+        ]
+      },
+    ]
+
+    const antTexture = '/assets/obj/ant/ant.png'
+    const antMaterial = '/assets/obj/ant/ant.mtl'
+    const antObject = '/assets/obj/ant/ant.obj'
+
     // 前進後進変数宣言
     this.moveForward = false
     this.moveBackward = false
@@ -68,16 +115,13 @@ export default class extends Controller {
     this.scene.add(this.directionalLight)
 
     this.modelMeshs = []
-    const antTexture = '/assets/obj/ant/ant.png'
-    const antMaterial = '/assets/obj/ant/ant.mtl'
-    const antObject = '/assets/obj/ant/ant.obj'
-    this.createObject(antTexture, antMaterial, antObject, 10)
+    this.createUsers(users)
     
     this.obstacleMeshs = []
     const rockTexture = '/assets/obj/rock/rock.png'
     const rockMaterial = '/assets/obj/rock/rock.mtl'
     const rockObject = '/assets/obj/rock/rock.obj'
-    this.createObject(rockTexture, rockMaterial, rockObject, 80, true)
+    this.createObject(rockTexture, rockMaterial, rockObject, 80)
 
     // 地面作成
     const groundTexture = new THREE.TextureLoader().load('/assets/obj/ground/ground.jpg')
@@ -190,52 +234,75 @@ export default class extends Controller {
     this.animate()
   }
 
-  async createObject(textureFile, materialFile, objectFile, amount, obstacle=false) {
+  async createUsers(users) {
     // テクスチャの読み込み
     const textureLoader = new THREE.TextureLoader()
-    // loadだとモデル作成前に先に他の処理が実行されてしまう
-    const texture = await textureLoader.loadAsync(textureFile)
     // OBJファイルの読み込み
     const objLoader = new OBJLoader()
     // MTLファイルの読み込み
     const mtlLoader = new MTLLoader()
 
-    for(let i = 0; i < amount; i++) {
-      const mtl = await mtlLoader.loadAsync(materialFile)
+    for(let i = 0; i < users.length; i++) {
+      console.log(users[i].texture)
+      // loadだとモデル作成前に先に他の処理が実行されてしまう
+      const texture = await textureLoader.loadAsync(users[i].texture)
+      const mtl = await mtlLoader.loadAsync(users[i].material)
       // マテリアルをセットしながらオブジェクト作成
-      const model = await objLoader.setMaterials(mtl).loadAsync(objectFile)
+      const model = await objLoader.setMaterials(mtl).loadAsync(users[i].object)
       // オブジェクトとすべての子孫に対してコールバックを実行
       model.traverse((child) => {
         if(child.isMesh) child.material.map = texture
       })
-      if(obstacle) {
-        // 障害物を円周上に作成
-        //θ[rad] 2π = 360°
-        const radian = i / 40 * Math.PI
-        model.position.set(
-          10 * Math.cos(radian),
-          -0.5,
-          10 * Math.sin(radian)
-        )
-        model.children[0].position.set(
-          10 * Math.cos(radian),
-          -0.5,
-          10 * Math.sin(radian)
-        )
-        model.scale.set(0.005, 0.005, 0.005)
-
-        this.obstacleMeshs.push(model.children[0])
-      } else {
-        const randomNumber1 = Math.random() * 10 - 5
-        const randomNumber2 = Math.random() * 10 - 5
-        // モデルとMeshにポジションをセット
-        model.position.set(randomNumber1, 0, randomNumber2)
-        model.children[0].position.set(randomNumber1, 0, randomNumber2)
-        model.scale.set(0.001, 0.001, 0.001)
-        // モデルからメッシュを取得して配列に入れる
-        this.modelMeshs.push(model.children[0])
+      const randomNumber1 = Math.random() * 10 - 5
+      const randomNumber2 = Math.random() * 10 - 5
+      // モデルとMeshにポジションをセット
+      model.position.set(randomNumber1, 0, randomNumber2)
+      model.children[0].position.set(randomNumber1, 0, randomNumber2)
+      model.scale.set(0.001, 0.001, 0.001)
+      //モデルにユーザー情報を入れる 
+      model.children[0].userData = {
+        id: users[i].id,
+        name: users[i].name,
+        text: users[i].post[0].text,
+        image_url: users[i].post[0].image_url
       }
+      console.log(model.children[0].userData)
+      // モデルからメッシュを取得して配列に入れる
+      this.modelMeshs.push(model.children[0])
       // y軸回転を90°~270°の間に指定
+      model.rotation.y = Math.PI * (Math.random() * 2 + 1)
+      this.scene.add(model)
+    }
+  }
+
+  async createObject(textureFile, materialFile, objectFile, amount) {
+    const textureLoader = new THREE.TextureLoader()
+    const texture = await textureLoader.loadAsync(textureFile)
+    const objLoader = new OBJLoader()
+    const mtlLoader = new MTLLoader()
+
+    for(let i = 0; i < amount; i++) {
+      const mtl = await mtlLoader.loadAsync(materialFile)
+      const model = await objLoader.setMaterials(mtl).loadAsync(objectFile)
+      model.traverse((child) => {
+        if(child.isMesh) child.material.map = texture
+      })
+      // 障害物を円周上に作成
+      //θ[rad] 2π = 360°
+      const radian = i / (amount / 2) * Math.PI
+      model.position.set(
+        10 * Math.cos(radian), // 半径 * Math.cos(radian)でx座標取得
+        -0.5,
+        10 * Math.sin(radian) // 半径 * Math.sin(radian)でz座標取得
+      )
+      model.children[0].position.set(
+        10 * Math.cos(radian),
+        -0.5,
+        10 * Math.sin(radian)
+      )
+      model.scale.set(0.005, 0.005, 0.005)
+
+      this.obstacleMeshs.push(model.children[0])
       model.rotation.y = Math.PI * (Math.random() * 2 + 1)
       this.scene.add(model)
     }
@@ -327,7 +394,7 @@ export default class extends Controller {
     )
   }
 
-  setOfContents(text = '', name = '働かないあり', image_url) {
+  setOfContents(text = '', name = '働かないあり', image_url = null) {
     // 文字を表示
     this.textContainer.visible = true
     this.text.set({
@@ -429,7 +496,11 @@ export default class extends Controller {
         this.controls.moveForward(-0.5)
 
         // テキストを表示させる
-        this.setOfContents('とてもいい天気ですね！働きたくなくなってしまいます！', 'いっせい', '/assets/ant-example.jpg')
+        this.setOfContents(
+          this.modelObjs[0].object.userData.text,
+          this.modelObjs[0].object.userData.name,
+          this.modelObjs[0].object.userData.image_url
+        )
       }
 
       // 障害物との衝突判定
@@ -458,11 +529,10 @@ export default class extends Controller {
         const hitObjs = bulletRaycaster.intersectObjects( this.modelMeshs )
 
         if(hitObjs.length > 0) {
-          console.log(hitObjs)
           this.bullet.material.dispose()
           this.bullet.geometry.dispose()
           this.scene.remove(this.bullet)
-          console.log('ライク')
+          document.getElementById('userName').innerHTML = hitObjs[0].object.userData.name + 'に餌を与えました'
         }
       }
     }
