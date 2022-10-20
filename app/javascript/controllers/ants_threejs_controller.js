@@ -55,10 +55,6 @@ export default class extends Controller {
       },
     ]
 
-    const antTexture = '/assets/obj/ant/ant.png'
-    const antMaterial = '/assets/obj/ant/ant.mtl'
-    const antObject = '/assets/obj/ant/ant.obj'
-
     // 前進後進変数宣言
     this.moveForward = false
     this.moveBackward = false
@@ -243,7 +239,6 @@ export default class extends Controller {
     const mtlLoader = new MTLLoader()
 
     for(let i = 0; i < users.length; i++) {
-      console.log(users[i].texture)
       // loadだとモデル作成前に先に他の処理が実行されてしまう
       const texture = await textureLoader.loadAsync(users[i].texture)
       const mtl = await mtlLoader.loadAsync(users[i].material)
@@ -266,7 +261,6 @@ export default class extends Controller {
         text: users[i].post[0].text,
         image_url: users[i].post[0].image_url
       }
-      console.log(model.children[0].userData)
       // モデルからメッシュを取得して配列に入れる
       this.modelMeshs.push(model.children[0])
       // y軸回転を90°~270°の間に指定
