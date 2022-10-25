@@ -3,7 +3,7 @@ import * as THREE from "three"
 import { MTLLoader } from "three/MTLLoader"
 import { OBJLoader } from "three/OBJLoader"
 // 一人称視点
-import { PointerLockControls } from "three/PointerLockControls"
+import { PointerLockControls } from "../plugins/PointerLockControlsMobile"
 // 3D文字盤
 import * as ThreeMeshUI from "three-mesh-ui"
 
@@ -158,6 +158,9 @@ export default class extends Controller {
         case "KeyD":
           this.moveRight = true
           break
+        case "Space":
+          // 餌発射
+          shoot()
       }
     }
 
@@ -182,6 +185,55 @@ export default class extends Controller {
     document.addEventListener("keydown", onKeyDown)
     // キーボードが離された時の処理
     document.addEventListener("keyup", onKeyUp)
+
+    // スマホ用
+    // 前進
+    const touchForward = document.getElementById("key-w")
+    touchForward.addEventListener("touchstart", () => {
+      this.moveForward = true
+    })
+    touchForward.addEventListener("touchend", () => {
+      this.moveForward = false
+    })
+    // 左進
+    const touchLeft = document.getElementById("key-a")
+    touchLeft.addEventListener("touchstart", () => {
+      this.moveLeft = true
+    })
+    touchLeft.addEventListener("touchend", () => {
+      this.moveLeft = false
+    })
+    // 後進
+    const touchBack = document.getElementById("key-s")
+    touchBack.addEventListener("touchstart", () => {
+      this.moveBackward = true
+    })
+    touchBack.addEventListener("touchend", () => {
+      this.moveBackward = false
+    })
+    // 右進
+    const touchRight = document.getElementById("key-d")
+    touchRight.addEventListener("touchstart", () => {
+      this.moveRight = true
+    })
+    touchRight.addEventListener("touchend", () => {
+      this.moveRight = false
+    })
+    // 餌発射
+    const touchLikeBullet = document.getElementById("key-like")
+    touchLikeBullet.addEventListener("touchstart", () => {
+      shoot()
+    })
+    
+    // キャンバスを触っている際のタッチスクロールキャンセル
+    this.renderer.domElement.addEventListener("touchmove", (event) => {
+      event.preventDefault()
+    })
+
+    // 右クリック及び長押しキャンセル
+    document.addEventListener("contextmenu", (event) => {
+      event.preventDefault()
+    })
 
     // 餌発射
     const shoot = () => {
@@ -217,9 +269,6 @@ export default class extends Controller {
       this.camera.getWorldDirection(this.directionVector)
       this.scene.add(this.bullet)
     }
-
-    // ダブルクリック時
-    document.addEventListener("dblclick", shoot)
 
     this.prevTime = performance.now()
 
