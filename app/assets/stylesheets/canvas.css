@@ -43,3 +43,11 @@ main {
   padding: 0;
   background-image: linear-gradient(#f8f8f8 10%, #aaa);
 }
+#explanation {
+  z-index: 2;
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  color: #fff;
+  background-color: rgba(0,0,0,.8);
+}

@@ -12,6 +12,14 @@ export default class extends Controller {
   async connect() {
     console.log('helloAnts', this.element)
 
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+      document.getElementById("pc").classList.add("d-none")
+    } else {
+      document.getElementById("button-group").classList.add("d-none")
+      document.getElementById("phone").classList.add("d-none")
+    }
+
     // のちにaxiosで取得するデータ
     const users = [
       {
@@ -135,14 +143,20 @@ export default class extends Controller {
     // FPS視点設定
     this.controls = new PointerLockControls(this.camera, this.renderer.domElement)
     // クリックしたらルックを始める処理
-    window.addEventListener("click", () => {
+    const explanation = document.getElementById("explanation")
+
+    document.addEventListener("click", () => {
       this.controls.lock()
+      explanation.style.zIndex = 0
     })
-    window.addEventListener("click", () => {
+    explanation.addEventListener("click", () => {
         this.startAudio()
       },
       { once: true }
     )
+    this.controls.addEventListener("unlock", () => {
+      explanation.style.zIndex = 2
+    })
 
     const onKeyDown = (event) => {
       switch(event.code) {
