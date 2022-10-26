@@ -38,9 +38,9 @@ export default class extends Controller {
       {
         id: 2,
         name: '太郎',
-        texture: '/assets/obj/ant/ant.png',
-        material: '/assets/obj/ant/ant.mtl',
-        object: '/assets/obj/ant/ant.obj',
+        texture: '/assets/obj/spider/spider.jpg',
+        material: '/assets/obj/spider/spider.mtl',
+        object: '/assets/obj/spider/spider.obj',
         post: [
           {
             text: '豆腐の腐は柔らかいという意味です豆を柔らかくして作られたものであって腐った豆を使用しているのでもなければ豆を腐らせて作るわけでもありません',
@@ -316,7 +316,6 @@ export default class extends Controller {
       // モデルとMeshにポジションをセット
       model.position.set(randomNumber1, 0, randomNumber2)
       model.children[0].position.set(randomNumber1, 0, randomNumber2)
-      model.scale.set(0.001, 0.001, 0.001)
       //モデルにユーザー情報を入れる 
       model.children[0].userData = {
         id: users[i].id,
@@ -324,11 +323,27 @@ export default class extends Controller {
         text: users[i].post[0].text,
         image_url: users[i].post[0].image_url
       }
+
       // モデルからメッシュを取得して配列に入れる
       this.modelMeshs.push(model.children[0])
       // y軸回転を90°~270°の間に指定
       model.rotation.y = Math.PI * (Math.random() * 2 + 1)
       this.scene.add(model)
+
+      // 取得したモデルのサイズを均一にするための計算
+      const box3 = new THREE.Box3()
+      // 世界軸に沿った最小のバウンディング ボックスを計算
+      box3.setFromObject( model.children[0] )
+      // 現物のサイズを出力
+      const width = box3.max.x - box3.min.x
+      const hight = box3.max.y - box3.min.y
+      const length = box3.max.z - box3.min.z
+
+      // 最大値を取得
+      const maxSize = Math.max(width, hight, length)
+      const scaleFactor =  1 / maxSize
+
+      model.scale.set(scaleFactor, scaleFactor, scaleFactor)
     }
   }
 
