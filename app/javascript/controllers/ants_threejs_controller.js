@@ -51,9 +51,9 @@ export default class extends Controller {
       {
         id: 3,
         name: 'ひとみ',
-        texture: '/assets/obj/ant/ant.png',
-        material: '/assets/obj/ant/ant.mtl',
-        object: '/assets/obj/ant/ant.obj',
+        texture: '/assets/obj/ladybug/ladybug.jpg',
+        material: '/assets/obj/ladybug/ladybug.mtl',
+        object: '/assets/obj/ladybug/ladybug.obj',
         post: [
           {
             text: '伯方の塩はメキシコやオーストラリアの天日塩田塩を使用しています商品パッケージにもきちんと書いてあります',
