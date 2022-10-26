@@ -313,9 +313,9 @@ export default class extends Controller {
       })
       const randomNumber1 = Math.random() * 10 - 5
       const randomNumber2 = Math.random() * 10 - 5
-      // モデルとMeshにポジションをセット
+
       model.position.set(randomNumber1, 0, randomNumber2)
-      model.children[0].position.set(randomNumber1, 0, randomNumber2)
+
       //モデルにユーザー情報を入れる 
       model.children[0].userData = {
         id: users[i].id,
@@ -367,11 +367,7 @@ export default class extends Controller {
         -0.5,
         10 * Math.sin(radian) // 半径 * Math.sin(radian)でz座標取得
       )
-      model.children[0].position.set(
-        10 * Math.cos(radian),
-        -0.5,
-        10 * Math.sin(radian)
-      )
+
       model.scale.set(0.005, 0.005, 0.005)
 
       this.obstacleMeshs.push(model.children[0])
@@ -489,16 +485,16 @@ export default class extends Controller {
     }
   }
 
-  setTextPosition(collisionObject) {
+  setTextPosition(collisionObjectPosition) {
     const vec = new THREE.Vector3()
     // subVectors(a: vector, b: vector)-> ベクトルa-bを実行
-    vec.subVectors(this.camera.position, collisionObject.position)
+    vec.subVectors(this.camera.position, collisionObjectPosition)
 
     // multiplyScalar(s: Float)-> ベクトルをスカラーで乗算
     const vec2 = vec.multiplyScalar(0.5)
 
     // addVectors(a: Vector3, b: Vector3)-> ベクトルa+bを実行
-    vec.addVectors(collisionObject.position, vec2)
+    vec.addVectors(collisionObjectPosition, vec2)
 
     // 文字盤の位置座標に計算したベクトルをセット
     this.textContainer.position.copy(vec)
@@ -575,19 +571,19 @@ export default class extends Controller {
         )
       }
 
+      for(let j = 0; j < this.modelMeshs.length; j++ ) {
+        // 衝突した奴が常にこっちを見る
+        if(this.modelMeshs[j].id == this.collisionObjId) {
+          this.modelMeshs[j].lookAt(this.camera.position)
+          this.setTextPosition(this.modelMeshs[j].parent.position)
+        }
+      }
+
       // 障害物との衝突判定
       this.obstacleObjs = raycaster.intersectObjects( this.obstacleMeshs );
       if(this.obstacleObjs.length > 0) {
         this.controls.moveForward(this.velocity.z * delta)
         this.controls.moveRight(this.velocity.x * delta)
-      }
-
-      for(let j = 0; j < this.modelMeshs.length; j++ ) {
-        // 衝突した奴が常にこっちを見る
-        if(this.modelMeshs[j].id == this.collisionObjId) {
-          this.modelMeshs[j].lookAt(this.camera.position)
-          this.setTextPosition(this.modelMeshs[j])
-        }
       }
 
       // 発射物とモデルとの当たり判定
