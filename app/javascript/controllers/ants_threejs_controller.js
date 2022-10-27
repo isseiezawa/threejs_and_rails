@@ -3,7 +3,7 @@ import * as THREE from "three"
 import { MTLLoader } from "three/MTLLoader"
 import { OBJLoader } from "three/OBJLoader"
 // 一人称視点
-import { PointerLockControls } from "three/PointerLockControls"
+import { PointerLockControls } from "../plugins/PointerLockControlsMobile"
 // 3D文字盤
 import * as ThreeMeshUI from "three-mesh-ui"
 
@@ -11,6 +11,14 @@ import * as ThreeMeshUI from "three-mesh-ui"
 export default class extends Controller {
   async connect() {
     console.log('helloAnts', this.element)
+
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+      document.getElementById("pc").classList.add("d-none")
+    } else {
+      document.getElementById("button-group").classList.add("d-none")
+      document.getElementById("phone").classList.add("d-none")
+    }
 
     // のちにaxiosで取得するデータ
     const users = [
@@ -30,9 +38,9 @@ export default class extends Controller {
       {
         id: 2,
         name: '太郎',
-        texture: '/assets/obj/ant/ant.png',
-        material: '/assets/obj/ant/ant.mtl',
-        object: '/assets/obj/ant/ant.obj',
+        texture: '/assets/obj/spider/spider.jpg',
+        material: '/assets/obj/spider/spider.mtl',
+        object: '/assets/obj/spider/spider.obj',
         post: [
           {
             text: '豆腐の腐は柔らかいという意味です豆を柔らかくして作られたものであって腐った豆を使用しているのでもなければ豆を腐らせて作るわけでもありません',
@@ -43,9 +51,9 @@ export default class extends Controller {
       {
         id: 3,
         name: 'ひとみ',
-        texture: '/assets/obj/ant/ant.png',
-        material: '/assets/obj/ant/ant.mtl',
-        object: '/assets/obj/ant/ant.obj',
+        texture: '/assets/obj/ladybug/ladybug.jpg',
+        material: '/assets/obj/ladybug/ladybug.mtl',
+        object: '/assets/obj/ladybug/ladybug.obj',
         post: [
           {
             text: '伯方の塩はメキシコやオーストラリアの天日塩田塩を使用しています商品パッケージにもきちんと書いてあります',
@@ -135,14 +143,20 @@ export default class extends Controller {
     // FPS視点設定
     this.controls = new PointerLockControls(this.camera, this.renderer.domElement)
     // クリックしたらルックを始める処理
-    window.addEventListener("click", () => {
+    const explanation = document.getElementById("explanation")
+
+    document.addEventListener("click", () => {
       this.controls.lock()
+      explanation.style.zIndex = 0
     })
-    window.addEventListener("click", () => {
+    explanation.addEventListener("click", () => {
         this.startAudio()
       },
       { once: true }
     )
+    this.controls.addEventListener("unlock", () => {
+      explanation.style.zIndex = 2
+    })
 
     const onKeyDown = (event) => {
       switch(event.code) {
@@ -158,6 +172,9 @@ export default class extends Controller {
         case "KeyD":
           this.moveRight = true
           break
+        case "Space":
+          // 餌発射
+          shoot()
       }
     }
 
@@ -182,6 +199,55 @@ export default class extends Controller {
     document.addEventListener("keydown", onKeyDown)
     // キーボードが離された時の処理
     document.addEventListener("keyup", onKeyUp)
+
+    // スマホ用
+    // 前進
+    const touchForward = document.getElementById("key-w")
+    touchForward.addEventListener("touchstart", () => {
+      this.moveForward = true
+    })
+    touchForward.addEventListener("touchend", () => {
+      this.moveForward = false
+    })
+    // 左進
+    const touchLeft = document.getElementById("key-a")
+    touchLeft.addEventListener("touchstart", () => {
+      this.moveLeft = true
+    })
+    touchLeft.addEventListener("touchend", () => {
+      this.moveLeft = false
+    })
+    // 後進
+    const touchBack = document.getElementById("key-s")
+    touchBack.addEventListener("touchstart", () => {
+      this.moveBackward = true
+    })
+    touchBack.addEventListener("touchend", () => {
+      this.moveBackward = false
+    })
+    // 右進
+    const touchRight = document.getElementById("key-d")
+    touchRight.addEventListener("touchstart", () => {
+      this.moveRight = true
+    })
+    touchRight.addEventListener("touchend", () => {
+      this.moveRight = false
+    })
+    // 餌発射
+    const touchLikeBullet = document.getElementById("key-like")
+    touchLikeBullet.addEventListener("touchstart", () => {
+      shoot()
+    })
+    
+    // キャンバスを触っている際のタッチスクロールキャンセル
+    this.renderer.domElement.addEventListener("touchmove", (event) => {
+      event.preventDefault()
+    })
+
+    // 右クリック及び長押しキャンセル
+    document.addEventListener("contextmenu", (event) => {
+      event.preventDefault()
+    })
 
     // 餌発射
     const shoot = () => {
@@ -218,9 +284,6 @@ export default class extends Controller {
       this.scene.add(this.bullet)
     }
 
-    // ダブルクリック時
-    document.addEventListener("dblclick", shoot)
-
     this.prevTime = performance.now()
 
     // テキストの雛形作成
@@ -250,10 +313,9 @@ export default class extends Controller {
       })
       const randomNumber1 = Math.random() * 10 - 5
       const randomNumber2 = Math.random() * 10 - 5
-      // モデルとMeshにポジションをセット
+
       model.position.set(randomNumber1, 0, randomNumber2)
-      model.children[0].position.set(randomNumber1, 0, randomNumber2)
-      model.scale.set(0.001, 0.001, 0.001)
+
       //モデルにユーザー情報を入れる 
       model.children[0].userData = {
         id: users[i].id,
@@ -261,11 +323,27 @@ export default class extends Controller {
         text: users[i].post[0].text,
         image_url: users[i].post[0].image_url
       }
+
       // モデルからメッシュを取得して配列に入れる
       this.modelMeshs.push(model.children[0])
       // y軸回転を90°~270°の間に指定
       model.rotation.y = Math.PI * (Math.random() * 2 + 1)
       this.scene.add(model)
+
+      // 取得したモデルのサイズを均一にするための計算
+      const box3 = new THREE.Box3()
+      // 世界軸に沿った最小のバウンディング ボックスを計算
+      box3.setFromObject( model.children[0] )
+      // 現物のサイズを出力
+      const width = box3.max.x - box3.min.x
+      const hight = box3.max.y - box3.min.y
+      const length = box3.max.z - box3.min.z
+
+      // 最大値を取得
+      const maxSize = Math.max(width, hight, length)
+      const scaleFactor =  1 / maxSize
+
+      model.scale.set(scaleFactor, scaleFactor, scaleFactor)
     }
   }
 
@@ -289,11 +367,7 @@ export default class extends Controller {
         -0.5,
         10 * Math.sin(radian) // 半径 * Math.sin(radian)でz座標取得
       )
-      model.children[0].position.set(
-        10 * Math.cos(radian),
-        -0.5,
-        10 * Math.sin(radian)
-      )
+
       model.scale.set(0.005, 0.005, 0.005)
 
       this.obstacleMeshs.push(model.children[0])
@@ -411,16 +485,16 @@ export default class extends Controller {
     }
   }
 
-  setTextPosition(collisionObject) {
+  setTextPosition(collisionObjectPosition) {
     const vec = new THREE.Vector3()
     // subVectors(a: vector, b: vector)-> ベクトルa-bを実行
-    vec.subVectors(this.camera.position, collisionObject.position)
+    vec.subVectors(this.camera.position, collisionObjectPosition)
 
     // multiplyScalar(s: Float)-> ベクトルをスカラーで乗算
     const vec2 = vec.multiplyScalar(0.5)
 
     // addVectors(a: Vector3, b: Vector3)-> ベクトルa+bを実行
-    vec.addVectors(collisionObject.position, vec2)
+    vec.addVectors(collisionObjectPosition, vec2)
 
     // 文字盤の位置座標に計算したベクトルをセット
     this.textContainer.position.copy(vec)
@@ -497,19 +571,19 @@ export default class extends Controller {
         )
       }
 
+      for(let j = 0; j < this.modelMeshs.length; j++ ) {
+        // 衝突した奴が常にこっちを見る
+        if(this.modelMeshs[j].id == this.collisionObjId) {
+          this.modelMeshs[j].lookAt(this.camera.position)
+          this.setTextPosition(this.modelMeshs[j].parent.position)
+        }
+      }
+
       // 障害物との衝突判定
       this.obstacleObjs = raycaster.intersectObjects( this.obstacleMeshs );
       if(this.obstacleObjs.length > 0) {
         this.controls.moveForward(this.velocity.z * delta)
         this.controls.moveRight(this.velocity.x * delta)
-      }
-
-      for(let j = 0; j < this.modelMeshs.length; j++ ) {
-        // 衝突した奴が常にこっちを見る
-        if(this.modelMeshs[j].id == this.collisionObjId) {
-          this.modelMeshs[j].lookAt(this.camera.position)
-          this.setTextPosition(this.modelMeshs[j])
-        }
       }
 
       // 発射物とモデルとの当たり判定

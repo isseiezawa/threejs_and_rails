@@ -1,5 +1,30 @@
-<%= content_tag(:canvas, '', data: { controller: 'ants-threejs' }) %>
 <main>
-  <h1>アリンコ一人称</h1>
-  <%= content_tag(:div, '', id: 'userName') %>
+  <%= content_tag(:canvas, '', data: { controller: 'ants-threejs' }) %>
+  <div class="text-group">
+    <h1>アリンコ一人称</h1>
+    <%= content_tag(:div, '', id: 'userName') %>
+    <div id="button-group" class="button-group d-flex justify-content-around text-center mb-2">
+      <div id="cross-key" class="d-flex flex-column">
+        <div id="key-w" class="keybord mx-auto">W</div>
+        <div class="key-ad d-flex justify-content-between mx-auto">
+          <div id="key-a" class="keybord">A</div>
+          <div id="key-d" class="keybord">D</div>
+        </div>
+        <div id="key-s" class="keybord mx-auto">S</div>
+      </div>
+      <div id="bullet-key">
+        <div id="key-like" class="bullet-button">餌発射</div>
+      </div>
+    </div>
+  </div>
 </main>
+<div id="explanation" class="text-center d-flex align-items-center justify-content-center"">
+  <div id="pc">
+    <div class="h3">WASDキーで移動<br>Spaceキーでいいねを発射</div>
+    <div>クリックSTART!</div>
+  </div>
+  <div id="phone">
+    <div class="h3">WASDで移動<br>餌ボタンでいいねを発射</div>
+    <div>タップでSTART!</div>
+  </div>
+</div>
