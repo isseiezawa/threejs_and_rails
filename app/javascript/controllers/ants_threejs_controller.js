@@ -128,7 +128,7 @@ export default class extends Controller {
     const rockTexture = '/assets/obj/rock/rock.png'
     const rockMaterial = '/assets/obj/rock/rock.mtl'
     const rockObject = '/assets/obj/rock/rock.obj'
-    this.createObject(rockTexture, rockMaterial, rockObject, 80)
+    this.createObject(rockTexture, rockMaterial, rockObject, 40)
 
     // 地面作成
     const groundTexture = new THREE.TextureLoader().load('/assets/obj/ground/ground.jpg')
@@ -377,9 +377,19 @@ export default class extends Controller {
         10 * Math.sin(radian) // 半径 * Math.sin(radian)でz座標取得
       )
 
-      model.scale.set(0.005, 0.005, 0.005)
+      const box3 = new THREE.Box3()
+      box3.setFromObject( model.children[0] )
+      const width = box3.max.x - box3.min.x
+      const length = box3.max.z - box3.min.z
 
-      this.obstacleMeshs.push(model.children[0])
+      const maxSize = Math.max(width, length)
+      const scaleFactor =  3 / maxSize
+
+      model.scale.set(scaleFactor, scaleFactor, scaleFactor)
+
+      for(let i = 0; i < model.children.length; i++) {
+        this.obstacleMeshs.push(model.children[i])
+      }
       model.rotation.y = Math.PI * (Math.random() * 2 + 1)
       this.scene.add(model)
     }
