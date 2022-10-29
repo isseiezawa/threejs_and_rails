@@ -79,6 +79,9 @@ export default class extends Controller {
     // 発射物の進行方向定義
     this.directionVector = new THREE.Vector3(0, 0, 0)
 
+    // モデルの高さの初期値
+    this.modelsPositionY = []
+
     // シーン作成
     this.scene = new THREE.Scene()
     // カメラ作成
@@ -347,6 +350,9 @@ export default class extends Controller {
       const randomNumber2 = Math.random() * 10 - 5
 
       model.position.set(randomNumber1, putHight, randomNumber2)
+
+      // モデルの初期高さをセット
+      this.modelsPositionY.push(putHight)
     }
   }
 
@@ -585,7 +591,18 @@ export default class extends Controller {
       // 地面当たり判定
       const groundObj = raycaster.intersectObject( this.ground )
       if(groundObj.length > 0) {
-        this.camera.position.setY(groundObj[0].point.y + 0.2)
+        this.camera.position.setY(groundObj[0].point.y + 0.3)
+      }
+
+      // モデルと地面の当たり判定
+      for(let i = 0; i < this.modelMeshs.length; i++) {
+        const modelPositionUpY = new THREE.Vector3(this.modelMeshs[i].parent.position.x, 10, this.modelMeshs[i].parent.position.z)
+        const modelRaycaster = new THREE.Raycaster(modelPositionUpY, new THREE.Vector3(0, -1, 0))
+        const modelHitGroundObj = modelRaycaster.intersectObject( this.ground )
+        if( modelHitGroundObj.length > 0 ) {
+          const positionY = this.modelsPositionY[i] + modelHitGroundObj[0].point.y
+          this.modelMeshs[i].parent.position.setY(positionY)
+        }
       }
 
       // 障害物との衝突判定
