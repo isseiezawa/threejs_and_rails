@@ -88,7 +88,7 @@ export default class extends Controller {
       0.1,
       100
     )
-    this.camera.position.y = 0.2
+    this.camera.position.y = 0.3
     // レンダラー作成
     this.renderer = new THREE.WebGLRenderer()
     // 空間の色設定
@@ -132,7 +132,6 @@ export default class extends Controller {
     const groundObj = await new OBJLoader().loadAsync('/assets/obj/ground/ground.obj')
     groundObj.children[0].material.map = groundTexture
     groundObj.scale.set(0.05, 0.008, 0.05)
-    groundObj.position.y = -0.2
     this.scene.add(groundObj)
 
     // 空作成
@@ -311,10 +310,6 @@ export default class extends Controller {
       model.traverse((child) => {
         if(child.isMesh) child.material.map = texture
       })
-      const randomNumber1 = Math.random() * 10 - 5
-      const randomNumber2 = Math.random() * 10 - 5
-
-      model.position.set(randomNumber1, 0, randomNumber2)
 
       //モデルにユーザー情報を入れる 
       model.children[0].userData = {
@@ -344,6 +339,14 @@ export default class extends Controller {
       const scaleFactor =  1 / maxSize
 
       model.scale.set(scaleFactor, scaleFactor, scaleFactor)
+
+      // モデルをy軸の0の上に配置する
+      const putHight = scaleFactor * -box3.min.y
+
+      const randomNumber1 = Math.random() * 10 - 5
+      const randomNumber2 = Math.random() * 10 - 5
+
+      model.position.set(randomNumber1, putHight, randomNumber2)
     }
   }
 
