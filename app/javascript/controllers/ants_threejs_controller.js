@@ -129,10 +129,10 @@ export default class extends Controller {
 
     // 地面作成
     const groundTexture = new THREE.TextureLoader().load('/assets/obj/ground/ground.jpg')
-    const groundObj = await new OBJLoader().loadAsync('/assets/obj/ground/ground.obj')
-    groundObj.children[0].material.map = groundTexture
-    groundObj.scale.set(0.05, 0.008, 0.05)
-    this.scene.add(groundObj)
+    this.ground = await new OBJLoader().loadAsync('/assets/obj/ground/ground.obj')
+    this.ground.children[0].material.map = groundTexture
+    this.ground.scale.set(0.05, 0.008, 0.05)
+    this.scene.add(this.ground)
 
     // 空作成
     const skyArr = this.createPathStrings('sky')
@@ -580,6 +580,12 @@ export default class extends Controller {
           this.modelMeshs[j].lookAt(this.camera.position)
           this.setTextPosition(this.modelMeshs[j].parent.position)
         }
+      }
+
+      // 地面当たり判定
+      const groundObj = raycaster.intersectObject( this.ground )
+      if(groundObj.length > 0) {
+        this.camera.position.setY(groundObj[0].point.y + 0.2)
       }
 
       // 障害物との衝突判定
