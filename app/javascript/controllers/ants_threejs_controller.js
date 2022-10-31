@@ -2,6 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 import * as THREE from "three"
 import { MTLLoader } from "three/MTLLoader"
 import { OBJLoader } from "three/OBJLoader"
+import { GLTFLoader } from "three/GLTFLoader"
 // 一人称視点
 import { PointerLockControls } from "../plugins/PointerLockControlsMobile"
 // 3D文字盤
@@ -79,6 +80,9 @@ export default class extends Controller {
     // 発射物の進行方向定義
     this.directionVector = new THREE.Vector3(0, 0, 0)
 
+    // モデルの高さの初期値
+    this.modelsPositionY = []
+
     // シーン作成
     this.scene = new THREE.Scene()
     // カメラ作成
@@ -88,11 +92,9 @@ export default class extends Controller {
       0.1,
       100
     )
-    this.camera.position.y = 0.2
+    this.camera.position.y = 0.3
     // レンダラー作成
     this.renderer = new THREE.WebGLRenderer()
-    // 空間の色設定
-    this.renderer.setClearColor(0x7fbfff, 1.0);
     // 寸法
     this.renderer.setSize(window.innerWidth, window.innerHeight)
     // DOM要素を追加する
@@ -125,15 +127,51 @@ export default class extends Controller {
     const rockTexture = '/assets/obj/rock/rock.png'
     const rockMaterial = '/assets/obj/rock/rock.mtl'
     const rockObject = '/assets/obj/rock/rock.obj'
-    this.createObject(rockTexture, rockMaterial, rockObject, 80)
+    this.createObject(rockTexture, rockMaterial, rockObject, 40)
+
+    // 猫追加
+    const gltfLoader = new GLTFLoader()
+    this.cat = await gltfLoader.loadAsync('/assets/obj/cat/cat.gltf')
+    this.scene.add(this.cat.scene)
+    this.cat.scene.position.set(13, 0, -13)
+
+    this.cat.scene.rotation.y = 1.2 * Math.PI
+
+    // 取得したモデルのサイズを均一にするための計算
+    const box3 = new THREE.Box3()
+    // 世界軸に沿った最小のバウンディング ボックスを計算
+    box3.setFromObject( this.cat.scene )
+    // 現物のサイズを出力
+    const width = box3.max.x - box3.min.x
+    const hight = box3.max.y - box3.min.y
+    const length = box3.max.z - box3.min.z
+
+    // 最大値を取得
+    const maxSize = Math.max(width, hight, length)
+    const scaleFactor =  45 / maxSize
+
+    this.cat.scene.scale.set(scaleFactor, scaleFactor, scaleFactor)
+
+    this.cat.scene.traverse((child) => {
+      if(child.isMesh) {
+        child.material.color.r = 10
+        child.material.color.g = 10
+        child.material.color.b = 10
+      }
+    })
+
+    this.mixer = new THREE.AnimationMixer(this.cat.scene)
+
+    this.cat.animations.forEach((clip) => {
+      this.mixer.clipAction(clip).play()
+    })
 
     // 地面作成
     const groundTexture = new THREE.TextureLoader().load('/assets/obj/ground/ground.jpg')
-    const groundObj = await new OBJLoader().loadAsync('/assets/obj/ground/ground.obj')
-    groundObj.children[0].material.map = groundTexture
-    groundObj.scale.set(0.05, 0.008, 0.05)
-    groundObj.position.y = -0.2
-    this.scene.add(groundObj)
+    this.ground = await new OBJLoader().loadAsync('/assets/obj/ground/ground.obj')
+    this.ground.children[0].material.map = groundTexture
+    this.ground.scale.set(0.05, 0.008, 0.05)
+    this.scene.add(this.ground)
 
     // 空作成
     const skyArr = this.createPathStrings('sky')
@@ -311,10 +349,6 @@ export default class extends Controller {
       model.traverse((child) => {
         if(child.isMesh) child.material.map = texture
       })
-      const randomNumber1 = Math.random() * 10 - 5
-      const randomNumber2 = Math.random() * 10 - 5
-
-      model.position.set(randomNumber1, 0, randomNumber2)
 
       //モデルにユーザー情報を入れる 
       model.children[0].userData = {
@@ -344,6 +378,17 @@ export default class extends Controller {
       const scaleFactor =  1 / maxSize
 
       model.scale.set(scaleFactor, scaleFactor, scaleFactor)
+
+      // モデルをy軸の0の上に配置する
+      const putHight = scaleFactor * -box3.min.y
+
+      const randomNumber1 = Math.random() * 10 - 5
+      const randomNumber2 = Math.random() * 10 - 5
+
+      model.position.set(randomNumber1, putHight, randomNumber2)
+
+      // モデルの初期高さをセット
+      this.modelsPositionY.push(putHight)
     }
   }
 
@@ -368,9 +413,19 @@ export default class extends Controller {
         10 * Math.sin(radian) // 半径 * Math.sin(radian)でz座標取得
       )
 
-      model.scale.set(0.005, 0.005, 0.005)
+      const box3 = new THREE.Box3()
+      box3.setFromObject( model.children[0] )
+      const width = box3.max.x - box3.min.x
+      const length = box3.max.z - box3.min.z
 
-      this.obstacleMeshs.push(model.children[0])
+      const maxSize = Math.max(width, length)
+      const scaleFactor =  3 / maxSize
+
+      model.scale.set(scaleFactor, scaleFactor, scaleFactor)
+
+      for(let i = 0; i < model.children.length; i++) {
+        this.obstacleMeshs.push(model.children[i])
+      }
       model.rotation.y = Math.PI * (Math.random() * 2 + 1)
       this.scene.add(model)
     }
@@ -525,7 +580,7 @@ export default class extends Controller {
     // 前後左右判定。Number(true) => 1, Number(false) => 0になる
     this.direction.z = Number(this.moveForward) - Number(this.moveBackward)
     this.direction.x = Number(this.moveRight) - Number(this.moveLeft)
-
+  
     // ポインタがONになったら(画面の中に吸い込まれたら)
     if(this.controls.isLocked) {
       // 現在のtimeと以前のprevTimeの差を取ってあげるとパソコンのフレームレートを獲得できる
@@ -579,6 +634,23 @@ export default class extends Controller {
         }
       }
 
+      // 地面当たり判定
+      const groundObj = raycaster.intersectObject( this.ground )
+      if(groundObj.length > 0) {
+        this.camera.position.setY(groundObj[0].point.y + 0.3)
+      }
+
+      // モデルと地面の当たり判定
+      for(let i = 0; i < this.modelMeshs.length; i++) {
+        const modelPositionUpY = new THREE.Vector3(this.modelMeshs[i].parent.position.x, 10, this.modelMeshs[i].parent.position.z)
+        const modelRaycaster = new THREE.Raycaster(modelPositionUpY, new THREE.Vector3(0, -1, 0))
+        const modelHitGroundObj = modelRaycaster.intersectObject( this.ground )
+        if( modelHitGroundObj.length > 0 ) {
+          const positionY = this.modelsPositionY[i] + modelHitGroundObj[0].point.y
+          this.modelMeshs[i].parent.position.setY(positionY)
+        }
+      }
+
       // 障害物との衝突判定
       this.obstacleObjs = raycaster.intersectObjects( this.obstacleMeshs );
       if(this.obstacleObjs.length > 0) {
@@ -603,10 +675,11 @@ export default class extends Controller {
           document.getElementById('userName').innerHTML = hitObjs[0].object.userData.name + 'に餌を与えました'
         }
       }
+
+      this.mixer.update(delta)
+
+      ThreeMeshUI.update();
     }
-
-    ThreeMeshUI.update();
-
     this.renderer.render(this.scene, this.camera)
   }
 
